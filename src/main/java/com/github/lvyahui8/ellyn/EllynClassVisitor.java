@@ -1,6 +1,8 @@
 package com.github.lvyahui8.ellyn;
 
 
+import com.github.lvyahui8.ellyn.plugin.Method;
+import com.github.lvyahui8.ellyn.plugin.Program;
 import org.objectweb.asm.*;
 
 import static org.objectweb.asm.Opcodes.*;
@@ -14,11 +16,11 @@ public class EllynClassVisitor extends ClassVisitor {
         Label tryStart = new Label();
         Label tryEnd = new Label();
         Label catchBlock = new Label();
-        String methodName;
 
-        public EllynMethodVisitor(String methodName, MethodVisitor methodVisitor) {
+        Method method;
+        public EllynMethodVisitor(Method method, MethodVisitor methodVisitor) {
             super(Constants.asmVersion, methodVisitor);
-            this.methodName = methodName;
+            this.method = method;
         }
 
         @Override
@@ -28,7 +30,7 @@ public class EllynClassVisitor extends ClassVisitor {
             MethodVisitor methodVisitor = mv;
             // type 表示拦截的异常类型，为null时，表示拦截类型为所有exception，其实也就是finally
             methodVisitor.visitTryCatchBlock(tryStart, tryEnd, catchBlock, null);
-            methodVisitor.visitLdcInsn(methodName);
+            methodVisitor.visitLdcInsn(method.getId());
             methodVisitor.visitMethodInsn(INVOKESTATIC, "com/github/lvyahui8/ellyn/plugin/EllynLocal", "push", "(Ljava/lang/String;)V", false);
             methodVisitor.visitLabel(tryStart);
         }
@@ -38,7 +40,7 @@ public class EllynClassVisitor extends ClassVisitor {
             MethodVisitor methodVisitor = mv;
             methodVisitor.visitLabel(tryEnd);
             // 将常量methodName推送到栈顶
-            methodVisitor.visitLdcInsn(methodName);
+            methodVisitor.visitLdcInsn(method.getId());
             // 取栈顶参数调用pop方法
             methodVisitor.visitMethodInsn(INVOKESTATIC, "com/github/lvyahui8/ellyn/plugin/EllynLocal", "pop", "(Ljava/lang/String;)V", false);
             Label returnLabel = new Label();
@@ -53,7 +55,7 @@ public class EllynClassVisitor extends ClassVisitor {
             // 弹出栈顶存入到本地变量1
             methodVisitor.visitVarInsn(ASTORE, 1);
             // 将方法名称压栈
-            methodVisitor.visitLdcInsn(methodName);
+            methodVisitor.visitLdcInsn(method.getId());
             // 调用pop方法
             methodVisitor.visitMethodInsn(INVOKESTATIC, "com/github/lvyahui8/ellyn/plugin/EllynLocal", "pop", "(Ljava/lang/String;)V", false);
             // 将本地变量1压入栈顶
@@ -76,6 +78,7 @@ public class EllynClassVisitor extends ClassVisitor {
     @Override
     public MethodVisitor visitMethod(int access, String name, String descriptor, String signature, String[] exceptions) {
         MethodVisitor nextMethodVisitor = super.visitMethod(access, name, descriptor, signature, exceptions);
-        return new EllynMethodVisitor(name,nextMethodVisitor);
+        Method m = new Method(Program.instance.methodId.incrementAndGet(),name,signature,"");
+        return new EllynMethodVisitor(m,nextMethodVisitor);
     }
 }

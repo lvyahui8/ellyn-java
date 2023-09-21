@@ -8,6 +8,7 @@ import org.objectweb.asm.ClassWriter;
 import java.io.File;
 
 public class StubInserter {
+
     public void enhanceClass(String className) throws Exception {
         ClassWriter writer = new ClassWriter(0);
         EllynClassVisitor visitor = new EllynClassVisitor(writer);

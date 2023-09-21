@@ -15,11 +15,11 @@ public class StubInserterTest extends TestCase {
 
     public static class TestClass {
         public static void main(String[] args) {
-            EllynLocal.push("main");
+            EllynLocal.push(1);
             try {
                 System.out.println("hello world");
             } finally {
-                EllynLocal.pop("main");
+                EllynLocal.pop(1);
             }
         }
     }

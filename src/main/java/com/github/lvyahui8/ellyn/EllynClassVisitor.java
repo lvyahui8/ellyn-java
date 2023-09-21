@@ -1,7 +1,6 @@
 package com.github.lvyahui8.ellyn;
 
 
-import com.github.lvyahui8.ellyn.plugin.EllynLocal;
 import org.objectweb.asm.*;
 
 import static org.objectweb.asm.Opcodes.*;
@@ -12,14 +11,14 @@ public class EllynClassVisitor extends ClassVisitor {
     }
 
     static class EllynMethodVisitor extends MethodVisitor {
-        Label label0 = new Label();
-        Label label1 = new Label();
-        Label label2 = new Label();
-        String name;
+        Label tryStart = new Label();
+        Label tryEnd = new Label();
+        Label catchBlock = new Label();
+        String methodName;
 
-        public EllynMethodVisitor(String name,MethodVisitor methodVisitor) {
+        public EllynMethodVisitor(String methodName, MethodVisitor methodVisitor) {
             super(Constants.asmVersion, methodVisitor);
-            this.name =name;
+            this.methodName = methodName;
         }
 
         @Override
@@ -27,32 +26,47 @@ public class EllynClassVisitor extends ClassVisitor {
             super.visitCode();
 //                mv.visitVarInsn("");
             MethodVisitor methodVisitor = mv;
-            methodVisitor.visitTryCatchBlock(label0, label1, label2, null);
-            methodVisitor.visitLdcInsn(name);
+            // type 表示拦截的异常类型，为null时，表示拦截类型为所有exception，其实也就是finally
+            methodVisitor.visitTryCatchBlock(tryStart, tryEnd, catchBlock, null);
+            methodVisitor.visitLdcInsn(methodName);
             methodVisitor.visitMethodInsn(INVOKESTATIC, "com/github/lvyahui8/ellyn/plugin/EllynLocal", "push", "(Ljava/lang/String;)V", false);
-            methodVisitor.visitLabel(label0);
+            methodVisitor.visitLabel(tryStart);
         }
 
         @Override
         public void visitEnd() {
             MethodVisitor methodVisitor = mv;
-            methodVisitor.visitLabel(label1);
-            methodVisitor.visitLdcInsn(name);
+            methodVisitor.visitLabel(tryEnd);
+            // 将常量methodName推送到栈顶
+            methodVisitor.visitLdcInsn(methodName);
+            // 取栈顶参数调用pop方法
             methodVisitor.visitMethodInsn(INVOKESTATIC, "com/github/lvyahui8/ellyn/plugin/EllynLocal", "pop", "(Ljava/lang/String;)V", false);
-            Label label3 = new Label();
-            methodVisitor.visitJumpInsn(GOTO, label3);
-            methodVisitor.visitLabel(label2);
+            Label returnLabel = new Label();
+            // 无条件跳转到return
+            methodVisitor.visitJumpInsn(GOTO, returnLabel);
+            // 定义catch block（label），当有异常发生时，执行流会被跳转到catch block
+            methodVisitor.visitLabel(catchBlock);
+            // 栈帧快照。F_SAME1
+            // F_SAME1: A compressed frame with exactly the same locals as the previous frame and with a single value on the stack.
+            // 局部变量表与前一帧完全一直(不新增任何局部变量) and 操作数栈有1个元素。
             methodVisitor.visitFrame(Opcodes.F_SAME1, 0, null, 1, new Object[] {"java/lang/Throwable"});
+            // 弹出栈顶存入到本地变量1
             methodVisitor.visitVarInsn(ASTORE, 1);
-            methodVisitor.visitLdcInsn(name);
+            // 将方法名称压栈
+            methodVisitor.visitLdcInsn(methodName);
+            // 调用pop方法
             methodVisitor.visitMethodInsn(INVOKESTATIC, "com/github/lvyahui8/ellyn/plugin/EllynLocal", "pop", "(Ljava/lang/String;)V", false);
+            // 将本地变量1压入栈顶
             methodVisitor.visitVarInsn(ALOAD, 1);
+            // 抛出栈顶
             methodVisitor.visitInsn(ATHROW);
-            methodVisitor.visitLabel(label3);
+            // 声明return代码块
+            methodVisitor.visitLabel(returnLabel);
+            // 帧快照
+            // F_SAME:  A compressed frame with exactly the same locals as the previous frame and with an empty stack.
+            // 局部变量表与前一帧完全一致(不新增任何局部变量) and 操作数栈为空
             methodVisitor.visitFrame(Opcodes.F_SAME, 0, null, 0, null);
             methodVisitor.visitInsn(RETURN);
-            methodVisitor.visitMaxs(2, 2);
-            methodVisitor.visitEnd();
             super.visitEnd();
         }
 

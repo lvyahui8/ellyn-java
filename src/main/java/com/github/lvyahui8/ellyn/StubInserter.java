@@ -17,7 +17,7 @@ public class StubInserter {
         String dir = clazz.getResource("").getPath();
         IOUtils.write(writer.toByteArray(),
                 FileUtils.newOutputStream(
-                        new File(dir + File.separator + clazz.getSimpleName() + "2.class"),
+                        new File(dir + File.separator + clazz.getSimpleName() + ".class"),
                         false));
     }
 }

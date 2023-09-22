@@ -5,11 +5,11 @@ import com.github.lvyahui8.ellyn.proj.TestApp;
 import junit.framework.TestCase;
 import org.objectweb.asm.util.ASMifier;
 
-public class StubInserterTest extends TestCase {
+public class ProgramInserterTest extends TestCase {
 
 
     public void testEnhanceClass() throws Exception {
-        StubInserter inserter = new StubInserter();
+        ProgramInserter inserter = new ProgramInserter();
         inserter.enhanceClass(TestApp.class.getName());
     }
 

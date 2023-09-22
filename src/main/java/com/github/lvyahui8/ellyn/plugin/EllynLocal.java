@@ -3,8 +3,9 @@ package com.github.lvyahui8.ellyn.plugin;
 public class EllynLocal {
     public static void push(int methodId) {
         CallContext context = getContext();
-        if (context.stack.isEmpty()) {
+        if (! context.stack.isEmpty()) {
             Integer top = context.stack.peek();
+            context.graph.add(top,methodId);
         }
         context.stack.push(methodId);
     }

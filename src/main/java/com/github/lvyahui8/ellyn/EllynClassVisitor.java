@@ -2,14 +2,17 @@ package com.github.lvyahui8.ellyn;
 
 
 import com.github.lvyahui8.ellyn.plugin.Method;
-import com.github.lvyahui8.ellyn.plugin.Program;
 import org.objectweb.asm.*;
 
 import static org.objectweb.asm.Opcodes.*;
 
 public class EllynClassVisitor extends ClassVisitor {
-    public EllynClassVisitor(ClassVisitor classVisitor) {
+
+    ProgramInserter inserter;
+
+    public EllynClassVisitor(ProgramInserter inserter, ClassVisitor classVisitor) {
         super(Constants.asmVersion, classVisitor);
+        this.inserter = inserter;
     }
 
     static class EllynMethodVisitor extends MethodVisitor {
@@ -78,7 +81,9 @@ public class EllynClassVisitor extends ClassVisitor {
     @Override
     public MethodVisitor visitMethod(int access, String name, String descriptor, String signature, String[] exceptions) {
         MethodVisitor nextMethodVisitor = super.visitMethod(access, name, descriptor, signature, exceptions);
-        Method m = new Method(Program.instance.methodId.incrementAndGet(),name,signature,"");
-        return new EllynMethodVisitor(m,nextMethodVisitor);
+        Method method = inserter.newMethod();
+        method.setFullName(signature);
+        method.setName(name);
+        return new EllynMethodVisitor(method,nextMethodVisitor);
     }
 }

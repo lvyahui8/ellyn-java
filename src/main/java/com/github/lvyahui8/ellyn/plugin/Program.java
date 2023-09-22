@@ -6,15 +6,18 @@ public class Program {
 
     public static final Program instance = new Program();
 
+    /**
+     * 加载全量函数文件
+     * @return 全量函数
+     */
     static Method[] loadMethods() {
+        //
+
         return null;
     }
 
     private Program() {
         methods = loadMethods();
     }
-
-    public AtomicInteger methodId = new AtomicInteger(0);
-
-    public final Method[] methods;
+    private final Method[] methods;
 }
